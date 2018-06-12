@@ -40,15 +40,22 @@ class Board:
     def clear(self):
         self.layout = [[Piece() for x in range(4)] for y in range(4)]
 
+    def print_element(self, location):
+        if not self.get_element(location).not_null():
+            x, y = location
+            return (2 - y)*3 + x + 1
+        else:
+            return self.get_element(location)
+
     def print(self):
-        print("    0   1   2")
-        print("  -------------")
-        print("0 |", self.get_element((0, 0)), "|", self.get_element((1, 0)), "|", self.get_element((2, 0)), "|")
-        print("  -------------")
-        print("1 |", self.get_element((0, 1)), "|", self.get_element((1, 1)), "|", self.get_element((2, 1)), "|")
-        print("  -------------")
-        print("2 |", self.get_element((0, 2)), "|", self.get_element((1, 2)), "|", self.get_element((2, 2)), "|")
-        print("  -------------")
+
+        print("-------------")
+        print("|", self.print_element((0, 0)), "|", self.print_element((1, 0)), "|", self.print_element((2, 0)), "|")
+        print("-------------")
+        print("|", self.print_element((0, 1)), "|", self.print_element((1, 1)), "|", self.print_element((2, 1)), "|")
+        print("-------------")
+        print("|", self.print_element((0, 2)), "|", self.print_element((1, 2)), "|", self.print_element((2, 2)), "|")
+        print("-------------")
 
     def get_element(self, location):
         x, y = location
@@ -179,42 +186,55 @@ class Game:
     @staticmethod
     def choose_location(player):
         # will add input options later
-        loc = (random.randint(0, 2), random.randint(0, 2))
-        # hold = input("where do you want to place a piece?, 0,0 is an example")
-        # x, y = int(hold.strip(string.ascii_letters))
-        # loc = (int(x), int(y))
+        # loc = (random.randint(0, 2), random.randint(0, 2))
+        hold = input("where do you want to place a piece?, 1-9  ")
+        num = int(hold) - 1
+        y = 2 - (num // 3)
+        x = num % 3
+        loc = (int(x), int(y))
         if player.is_real():
             return loc
         else:
             return loc
 
-    def next_turn(self):
+    def next_turn(self, testing, wins):
         self.turn = self.turn + 1
         play = self.turn % 2 - 1
         location = self.choose_location(self.player[play])
         cont = self.board.location_free(location)
         while not cont:
-            print("There is a piece in that location already")
+            if not testing:
+                print("There is a piece in that location already")
             location = self.choose_location(self.player[play])
             cont = self.board.location_free(location)
         self.player[play].play(self.board, location)
         self.board.print()
         if self.board.check_win():
             print(self.player[play].piece_type(), "WINS!")
+            wins.append(2*play - 1)
             return False
         if self.turn == 9:
             print("Its a tie!")
+            wins.append(0)
             return False
         return True
 
-    def start_game(self):
+    def start_game(self, wins, testing=False):
         start = True
         while start:
             self.board.clear()
+            self.turn = 0
             self.board.print()
-            keep_going = self.next_turn()
+            keep_going = self.next_turn(testing, wins)
             while keep_going:
-                keep_going = self.next_turn()
-            stay = input("keep playing? : y/n")
-            if stay != 'y':
-                return
+                keep_going = self.next_turn(testing, wins)
+            if not testing:
+                stay = input("keep playing? : y/n")
+                if stay != 'y':
+                    start = False
+                else:
+                    start = True
+            else:
+                start = False
+
+        return
