@@ -48,7 +48,7 @@ class Board:
             return self.get_element(location)
 
     def print(self):
-
+        print("\n")
         print("-------------")
         print("|", self.print_element((0, 0)), "|", self.print_element((1, 0)), "|", self.print_element((2, 0)), "|")
         print("-------------")
@@ -184,14 +184,16 @@ class Game:
         self.turn = 0
 
     @staticmethod
-    def choose_location(player):
+    def choose_location(player, testing):
         # will add input options later
-        # loc = (random.randint(0, 2), random.randint(0, 2))
-        hold = input("where do you want to place a piece?, 1-9  ")
-        num = int(hold) - 1
-        y = 2 - (num // 3)
-        x = num % 3
-        loc = (int(x), int(y))
+        if not testing:
+            hold = input("where do you want to place a piece?, 1-9  ")
+            num = int(hold) - 1
+            y = 2 - (num // 3)
+            x = num % 3
+            loc = (int(x), int(y))
+        else:
+            loc = (random.randint(0, 2), random.randint(0, 2))
         if player.is_real():
             return loc
         else:
@@ -200,15 +202,16 @@ class Game:
     def next_turn(self, testing, wins):
         self.turn = self.turn + 1
         play = self.turn % 2 - 1
-        location = self.choose_location(self.player[play])
+        location = self.choose_location(self.player[play], testing)
         cont = self.board.location_free(location)
         while not cont:
             if not testing:
                 print("There is a piece in that location already")
-            location = self.choose_location(self.player[play])
+            location = self.choose_location(self.player[play], testing)
             cont = self.board.location_free(location)
         self.player[play].play(self.board, location)
-        self.board.print()
+        if not testing:
+            self.board.print()
         if self.board.check_win():
             print(self.player[play].piece_type(), "WINS!")
             wins.append(2*play - 1)
@@ -224,12 +227,13 @@ class Game:
         while start:
             self.board.clear()
             self.turn = 0
-            self.board.print()
+            if not testing:
+                self.board.print()
             keep_going = self.next_turn(testing, wins)
             while keep_going:
                 keep_going = self.next_turn(testing, wins)
             if not testing:
-                stay = input("keep playing? : y/n")
+                stay = input("keep playing? : y/n   ")
                 if stay != 'y':
                     start = False
                 else:

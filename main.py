@@ -9,9 +9,9 @@ def sim_game():
         tic.start_game(wins, testing=True)
 
     x = sum(wins)
-    rate = (1 - x) / (2 * attempts)
+    # rate = (1 - x) / (2 * attempts)
     print(x)
-    print(rate)
+    # print(rate)
     # negative means that X is winning more
     # positive means that O is winning more
     # zero means ties
@@ -24,8 +24,8 @@ def real_game():
     tic.start_game(wins, testing=False)
 
 
-sim = False
-if sim:
+thing = input("real or sim? ")
+if thing == "sim":
     sim_game()
 else:
     real_game()
