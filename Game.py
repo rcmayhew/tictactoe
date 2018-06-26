@@ -1,5 +1,5 @@
 import random
-import string
+import math
 
 
 class Piece:
@@ -30,6 +30,23 @@ class Board:
     def __init__(self):
         self.layout = [[Piece() for x in range(4)] for y in range(4)]
 
+    @staticmethod
+    def copy(moves):
+        board = Board()
+        for idx, move in enumerate(moves):
+            loc = Game.convert_int(move)
+            turn, piece = Game.determine_player(idx)
+            board.__play_piece__(loc, piece)
+        return board
+
+    def convert_to_list(self):
+        moves = []
+        for i, row in enumerate(self.layout):
+            for j, element in enumerate(row):
+                if element == 'X' or element == 'O':
+                    moves.append(Game.convert_position((i, j)))
+        return moves
+
     def __play_piece__(self, location, piece):
         x, y = location
         self.layout[x][y] = piece
@@ -42,8 +59,7 @@ class Board:
 
     def print_element(self, location):
         if not self.get_element(location).not_null():
-            x, y = location
-            return (2 - y)*3 + x + 1
+            return Game.convert_position(location)
         else:
             return self.get_element(location)
 
@@ -90,8 +106,8 @@ class Board:
     def following(self, first, mid):
         x1, y1 = first
         x2, y2 = mid
-        next = (2 * x2 - x1, 2 * y2 - y1)
-        return next, self.get_element(next)
+        last = (2 * x2 - x1, 2 * y2 - y1)
+        return next, self.get_element(last)
 
     def __down_check(self, location):
         if self.get_element(location).not_null():
@@ -160,7 +176,7 @@ class Board:
 
 
 class Player:
-    def __init__(self, piece='o', actual=True):
+    def __init__(self, piece='O', actual=True):
         self.char = Piece(piece)
         self.person = actual
 
@@ -176,62 +192,156 @@ class Player:
     def piece_type(self):
         return self.char
 
+    @staticmethod
+    def pick_position(starting):
+        """
+        picks the best move by searching through the move set
+        :param starting: the moves that have already happened before the AI's turn
+        :return: the [1-9] position that is the best for the Ai
+        """
+        turn = len(starting) + 1
+        weight = Game.player_weight(turn)
+        bmove, bcost = 0, -100000000
+        for num in range(10):
+            if num not in starting:
+                # search through each move
+                move = list(starting)
+                move.append(num)
+                cost = Player.search(move) * weight
+                if cost > bcost:
+                    # pick the move with the highest points
+                    bmove = num
+            else:
+                continue
+        return bmove
+
+    @staticmethod
+    def search(moves):
+        """
+        checks each move and returns a value that is a weighted win ratio.
+        Assumes that there is a move in the moves list
+        :param moves: the moves that have already been done or test. It is also the list of moves to not test.
+        :return: the "weight" of winning form the current position. Positive is victory to 'X'
+        """
+        # will do a complete depth first search
+        # will recurse
+        # start with board - but not actaully board. will hand around a list instead
+        cost = 0
+        for num in range(10):
+            #  moves are 1-9
+            # add a move to the board and search down the list
+            if num not in moves:
+                move = list(moves)
+                move.append(num)
+                board = Board.copy(move)
+                turn = len(moves)
+                if board.check_win():
+                    cost = cost + Game.win_cost(turn) * math.factorial(10 - turn)
+                else:
+                    cost = cost + Player.search(move)
+                del board
+                if turn >= 9:
+                    return 0
+            else:
+                continue
+        return cost
+
 
 class Game:
     def __init__(self):
         self.board = Board()
-        self.player = [Player('X'), Player('O')]
+        self.player = [Player('X', actual=False), Player('O')]
         self.turn = 0
 
     @staticmethod
-    def choose_location(player, testing):
+    def choose_location(player, board, testing=False):
         # will add input options later
-        if not testing:
-            hold = input("where do you want to place a piece?, 1-9  ")
-            num = int(hold) - 1
-            y = 2 - (num // 3)
-            x = num % 3
-            loc = (int(x), int(y))
-        else:
-            loc = (random.randint(0, 2), random.randint(0, 2))
         if player.is_real():
+            if not testing:
+                hold = input("where do you want to place a piece?, 1-9  ")
+                loc = Game.convert_int(int(hold))
+            else:
+                loc = (random.randint(0, 2), random.randint(0, 2))
             return loc
         else:
+            position = player.pick_position(board.convert_to_list())
+            loc = Game.convert_int(position)
             return loc
+
+    @staticmethod
+    def convert_int(move):
+        num = move - 1
+        y = 2 - (num // 3)
+        x = num % 3
+        loc = (int(x), int(y))
+        return loc
+
+    @staticmethod
+    def convert_position(pair):
+        x, y = pair
+        return (2 - y)*3 + x + 1
+
+    @staticmethod
+    def determine_player(turn):
+        if turn % 2 == 0:
+            return 0, Piece('X')
+        else:
+            return 1, Piece('O')
+
+    @staticmethod
+    def player_weight(turn):
+        if turn % 2 == 0:
+            return 1
+        else:
+            return -1
+
+    @staticmethod
+    def win_cost(turn):
+        return -2*turn + 1
 
     def next_turn(self, testing, wins):
         self.turn = self.turn + 1
         play = self.turn % 2 - 1
-        location = self.choose_location(self.player[play], testing)
+        location = self.choose_location(self.player[play], self.board, testing)
         cont = self.board.location_free(location)
+
         while not cont:
             if not testing:
                 print("There is a piece in that location already")
-            location = self.choose_location(self.player[play], testing)
+            location = self.choose_location(self.player[play], self.board, testing)
             cont = self.board.location_free(location)
+
         self.player[play].play(self.board, location)
+
         if not testing:
             self.board.print()
+
         if self.board.check_win():
             print(self.player[play].piece_type(), "WINS!")
-            wins.append(2*play - 1)
+            wins.append(self.win_cost(play))
             return False
+
         if self.turn == 9:
             print("Its a tie!")
             wins.append(0)
             return False
+
         return True
 
     def start_game(self, wins, testing=False):
         start = True
+
         while start:
             self.board.clear()
             self.turn = 0
             if not testing:
                 self.board.print()
+
             keep_going = self.next_turn(testing, wins)
+
             while keep_going:
                 keep_going = self.next_turn(testing, wins)
+
             if not testing:
                 stay = input("keep playing? : y/n   ")
                 if stay != 'y':
