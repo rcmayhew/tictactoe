@@ -3,7 +3,7 @@ import Game
 
 def sim_game():
     wins = []
-    attempts = 100000
+    attempts = 1000000
     tic = Game.Game()
     for x in range(attempts):
         tic.start_game(wins, testing=True)
