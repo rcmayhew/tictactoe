@@ -30,6 +30,15 @@ class Board:
     def __init__(self):
         self.layout = [[Piece() for x in range(4)] for y in range(4)]
 
+    def new_board(self):
+        moves = self.convert_to_list()
+        board = Board.copy(moves)
+        return board
+
+    def turn_count(self):
+        moves = self.convert_to_list()
+        return len(moves)
+
     @staticmethod
     def copy(moves):
         board = Board()
@@ -174,6 +183,44 @@ class Board:
         else:
             return False
 
+    def down_axis(self):
+        value = 0
+        for row in self.layout:
+            orow = []
+            xrow = []
+            for elm in row:
+                if elm.character_type() == 'X':
+                    xrow.append('X')
+                elif elm.character_type() == 'O':
+                    orow.append('O')
+            value = value + self.axis_value(xrow, orow)
+        return value
+
+    def side_axis(self):
+        value = 0
+        for row in self.layout:
+            orow = []
+            xrow = []
+            for elm in row:
+                if elm.character_type() == 'X':
+                    xrow.append('X')
+                elif elm.character_type() == 'O':
+                    orow.append('O')
+            value = value + self.axis_value(xrow, orow)
+        return value
+
+    @staticmethod
+    def axis_value(xrow, orow):
+        x = len(xrow)
+        o = len(orow)
+        if x > 0 and o > 0:
+            return 0
+        maximum = (x, o)[o > x]
+        return 3**maximum
+
+    def value(self):
+        # check the 8 differnet lines and add up each of the axises values
+
 
 class Player:
     def __init__(self, piece='O', actual=True):
@@ -192,6 +239,9 @@ class Player:
     def piece_type(self):
         return self.char
 
+    def set_piece(self, piece):
+        self.char = piece
+
     @staticmethod
     def pick_position(starting):
         """
@@ -199,52 +249,27 @@ class Player:
         :param starting: the moves that have already happened before the AI's turn
         :return: the [1-9] position that is the best for the Ai
         """
-        turn = len(starting) + 1
+        turn = starting.turn_count() + 1
         weight = Game.player_weight(turn)
+        player = Player()
+        char, piece = Game.determine_player(turn)
+        player.set_piece(piece)
         bmove, bcost = 0, -100000000
         for num in range(10):
-            if num not in starting:
+            location = Game.convert_int(num)
+            if starting.location_free(location):
                 # search through each move
-                move = list(starting)
-                move.append(num)
-                cost = Player.search(move) * weight
+                board = starting.new_board
+                player.play(board, location)
+
+                # cost = board.value * weight
+                cost = 0
                 if cost > bcost:
                     # pick the move with the highest points
-                    bmove = num
+                    bmove = location
             else:
                 continue
         return bmove
-
-    @staticmethod
-    def search(moves):
-        """
-        checks each move and returns a value that is a weighted win ratio.
-        Assumes that there is a move in the moves list
-        :param moves: the moves that have already been done or test. It is also the list of moves to not test.
-        :return: the "weight" of winning form the current position. Positive is victory to 'X'
-        """
-        # will do a complete depth first search
-        # will recurse
-        # start with board - but not actaully board. will hand around a list instead
-        cost = 0
-        for num in range(10):
-            #  moves are 1-9
-            # add a move to the board and search down the list
-            if num not in moves:
-                move = list(moves)
-                move.append(num)
-                board = Board.copy(move)
-                turn = len(moves)
-                if board.check_win():
-                    cost = cost + Game.win_cost(turn) * math.factorial(10 - turn)
-                else:
-                    cost = cost + Player.search(move)
-                del board
-                if turn >= 9:
-                    return 0
-            else:
-                continue
-        return cost
 
 
 class Game:
@@ -264,8 +289,7 @@ class Game:
                 loc = (random.randint(0, 2), random.randint(0, 2))
             return loc
         else:
-            position = player.pick_position(board.convert_to_list())
-            loc = Game.convert_int(position)
+            loc = player.pick_position(board.convert_to_list())
             return loc
 
     @staticmethod
