@@ -1,5 +1,4 @@
 import random
-import math
 
 
 class Piece:
@@ -24,9 +23,17 @@ class Piece:
             return False
 
     def character_type(self):
+        """
+        Gives the type of character that the Piece is
+        :return: the char type that is embedded in the Piece
+        """
         return self.piece
 
     def not_null(self):
+        """
+        checks if the Piece is a black space
+        :return: True if the Piece is a space
+        """
         if self.character_type() is not ' ':
             return True
         else:
@@ -35,19 +42,35 @@ class Piece:
 
 class Board:
     def __init__(self):
+        """
+        Creates a board with empty spaces
+        """
         self.layout = [[Piece() for x in range(4)] for y in range(4)]
 
     def new_board(self):
+        """
+        Copys self and returns a copy as a new board
+        :return: the new Board that is equal
+        """
         moves = self.convert_to_list()
         board = Board.copy(moves)
         return board
 
     def turn_count(self):
+        """
+        Gives the amount of turns that have been played
+        :return: the number of turns as an int
+        """
         moves = self.convert_to_list()
         return len(moves)
 
     @staticmethod
     def copy(moves):
+        """
+        Creates a new board from a list of moves.
+        :param moves: the list of moves as int, assumes that the moves are [X, O] order
+        :return: gives the new Board
+        """
         board = Board()
         for idx, move in enumerate(moves):
             loc = Game.convert_int(move)
@@ -57,6 +80,12 @@ class Board:
 
     @staticmethod
     def merge_list(xmoves, omoves):
+        """
+        merges the lists to make a single list of all the moves
+        :param xmoves: the list of all x moves
+        :param omoves: the list of all o moves
+        :return: returns a list of [X, O] from the given lists
+        """
         x = len(xmoves)
         o = len(omoves)
         moves = []
@@ -69,6 +98,10 @@ class Board:
         return moves
 
     def convert_to_list(self):
+        """
+        Converts the board into a list in alternating [X, O] order
+        :return: the list of all moves done so far
+        """
         xmoves = []
         omoves = []
         for i in range(3):
@@ -81,22 +114,35 @@ class Board:
         return self.merge_list(xmoves, omoves)
 
     def __play_piece__(self, location, piece):
+        """
+        Places the Piece at the location
+        :param location: is the location to get the Piece, should already be checked and collected by the Game
+        :param piece: the Piece that is being played. Should be chosen based on whose turn it is
+        """
         x, y = location
         self.layout[x][y] = piece
 
-    def __str__(self):
-        return self.layout
-
     def clear(self):
+        """
+        Makes the Board empty, filled with space Pieces
+        """
         self.layout = [[Piece() for x in range(4)] for y in range(4)]
 
     def print_element(self, location):
+        """
+        gives the number as an int
+        :param location: the x, y position
+        :return: returns the char from the Piece at that location
+        """
         if not self.get_element(location).not_null():
             return Game.convert_position(location)
         else:
-            return self.get_element(location)
+            return self.get_element(location).character_type()
 
     def print(self):
+        """
+        Prints out the Board in the form for Tic Tac Toe
+        """
         print("\n")
         print("-------------")
         print("|", self.print_element((0, 0)), "|", self.print_element((1, 0)), "|", self.print_element((2, 0)), "|")
@@ -107,10 +153,20 @@ class Board:
         print("-------------")
 
     def get_element(self, location):
+        """
+        Gives the Piece at the location
+        :param location: the location that that element
+        :return: the Piece at the location
+        """
         x, y = location
         return self.layout[x][y]
 
     def location_free(self, location):
+        """
+        Checks if the location is a space Piece
+        :param location: the location to check in coordinate form
+        :return: returns True if the element is not a space
+        """
         if self.get_element(location).not_null():
             return False
         else:
@@ -398,7 +454,7 @@ class Game:
             self.board.print()
         if not testing:
             if self.board.check_win():
-                print(self.player[play].piece_type(), "WINS!")
+                print(self.player[play].piece_type().character_type(), "WINS!")
                 wins.append(self.win_cost(play))
                 return False
 
@@ -409,7 +465,7 @@ class Game:
         else:
             if self.board.check_win():
                 if self.player[play].piece_type() == 'X':
-                    print(self.player[play].piece_type(), "WINS!")
+                    print(self.player[play].piece_type().character_type(), "WINS!")
                 wins.append(self.win_cost(play))
                 return False
 
