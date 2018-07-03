@@ -1,2 +1,5 @@
 # tictactoe
-Practice building programs in Python. Plan to build an AI for the game
+This is a tictactoe program that can be played with 0-2 players. There is a bot that you can play against that will always force a tie 
+if the other player knows good strategy. If the player leaves openings, the bot will beat them. 
+
+There is currently no diffculties levels for the bot. Next step will be added a GUI.
