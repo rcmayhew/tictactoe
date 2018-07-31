@@ -456,7 +456,6 @@ class Player:
         :return: the [1-9] position that is the best for the Ai
         """
         turn = starting.turn_count() + 1
-        weight = Game.player_weight(turn)
         player = Player()
         char, piece = Game.determine_player(turn)
         player.set_piece(piece)
@@ -467,7 +466,7 @@ class Player:
                 # search through each move
                 board = starting.new_board()
                 player.play(board, location)
-                cost = board.value() * weight
+                cost = Player.second_level(board)
                 if cost > bcost:
                     # pick the move with the highest points
                     bmove = location
@@ -475,6 +474,34 @@ class Player:
             else:
                 continue
         return bmove
+
+    @staticmethod
+    def second_level(with_new_piece):
+        """
+        this called to give the actual value of each move but valuing it not at its value,
+        but at the value of the best option for the other player
+        :param with_new_piece:
+        :return:
+        """
+        turn = with_new_piece.turn_count() + 1
+        weight = Game.player_weight(turn)
+        player = Player()
+        char, piece = Game.determine_player(turn)
+        player.set_piece(piece)
+        bmove, bcost = 0, -100000000
+        for num in range(1, 10):
+            location = Game.convert_int(num)
+            if with_new_piece.location_free(location):
+                # search through each move
+                board = with_new_piece.new_board()
+                player.play(board, location)
+                cost = board.value() * weight
+                if cost > bcost:
+                    # pick the move with the highest points
+                    bcost = cost
+            else:
+                continue
+        return bcost * -1
 
     @staticmethod
     def player_input():
