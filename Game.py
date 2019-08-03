@@ -459,7 +459,7 @@ class Player:
         player = Player()
         char, piece = Game.determine_player(turn)
         player.set_piece(piece)
-        bmove, bcost = 0, -100000000
+        best_move, best_cost = 0, -100000000
         for num in range(1, 10):
             location = Game.convert_int(num)
             if starting.location_free(location):
@@ -467,13 +467,11 @@ class Player:
                 board = starting.new_board()
                 player.play(board, location)
                 cost = Player.second_level(board)
-                if cost > bcost:
+                if cost > best_cost:
                     # pick the move with the highest points
-                    bmove = location
-                    bcost = cost
-            else:
-                continue
-        return bmove
+                    best_move = location
+                    best_cost = cost
+        return best_move
 
     @staticmethod
     def second_level(with_new_piece):
